@@ -79,8 +79,8 @@ impl Default for OnePoleFilterParams {
 impl Plugin for OnePoleFilterPlugin {
     const NAME: &'static str = "One Pole Low Pass Filter Plugin";
     const VENDOR: &'static str = "CIMIL Thesis";
-    const URL: &'static str = "";
-    const EMAIL: &'static str = "none";
+    const URL: &'static str = "https://github.com/FedericoMenegoz/Brickworks-rs-plugin";
+    const EMAIL: &'static str = "fede.mene@icloud.com";
     const VERSION: &'static str = "0.1";
     const AUDIO_IO_LAYOUTS: &'static [AudioIOLayout] = &[
         AudioIOLayout {
@@ -175,5 +175,18 @@ impl Vst3Plugin for OnePoleFilterPlugin {
 
     const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] = &[Vst3SubCategory::Fx];
 }
-
+impl ClapPlugin for OnePoleFilterPlugin {
+    const CLAP_ID: &'static str = "com.cimil-thesis.gain";
+    const CLAP_DESCRIPTION: Option<&'static str> =
+        Some("A one pole low pass filter example plugin");
+    const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
+    const CLAP_SUPPORT_URL: Option<&'static str> = None;
+    const CLAP_FEATURES: &'static [ClapFeature] = &[
+        ClapFeature::AudioEffect,
+        ClapFeature::Stereo,
+        ClapFeature::Mono,
+        ClapFeature::Utility,
+    ];
+}
 nih_export_vst3!(OnePoleFilterPlugin);
+nih_export_clap!(OnePoleFilterPlugin);
