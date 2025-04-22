@@ -175,8 +175,9 @@ impl Vst3Plugin for OnePoleFilterPlugin {
 
     const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] = &[Vst3SubCategory::Fx];
 }
+
 impl ClapPlugin for OnePoleFilterPlugin {
-    const CLAP_ID: &'static str = "com.cimil-thesis.gain";
+    const CLAP_ID: &'static str = "com.cimil-thesis.one-pole";
     const CLAP_DESCRIPTION: Option<&'static str> =
         Some("A one pole low pass filter example plugin");
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
@@ -188,5 +189,6 @@ impl ClapPlugin for OnePoleFilterPlugin {
         ClapFeature::Utility,
     ];
 }
+
 nih_export_vst3!(OnePoleFilterPlugin);
 nih_export_clap!(OnePoleFilterPlugin);
