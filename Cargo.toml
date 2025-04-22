@@ -1,0 +1,18 @@
+[package]
+name = "one_pole_plugin"
+version = "0.1.0"
+edition = "2024"
+authors = ["Federico Menegoz <fede.mene@icloud.com>"]
+
+[dependencies]
+nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = [
+    "assert_process_allocs", # assert_process_allocs will complain if you alloc memory where you should not
+    "standalone"    # to be able to have a standalone plugin to be faster at debugging
+]}
+brickworks-rs = { git = "https://github.com/FedericoMenegoz/brickworks-rs.git" }
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[workspace]
+members = ["xtask"]
