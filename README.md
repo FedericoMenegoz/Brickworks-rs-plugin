@@ -45,3 +45,6 @@ Running the plugin standalone is helpful for debugging.
    ```bash
    ./target/debug/one_pole_filter --help
    ```
+
+## License
+Brickworks-rs is distributed under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html) License.
