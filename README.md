@@ -47,4 +47,4 @@ Running the plugin standalone is helpful for debugging.
    ```
 
 ## License
-Brickworks-rs is distributed under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html) License.
+Brickworks-rs-plugin is distributed under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html) License.
