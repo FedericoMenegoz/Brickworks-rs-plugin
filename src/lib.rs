@@ -63,14 +63,14 @@ impl Default for OnePoleFilterParams {
         Self {
             cutoff: FloatParam::new(
                 "cutoff",
-                100.0,
-                FloatRange::Linear {
-                    min: 0.0,
-                    max: 1000.0,
+                20000.0,
+                FloatRange::Skewed {
+                    min: 20.0,
+                    max: 20000.0,
+                    factor: 0.3,
                 },
             )
-            .with_step_size(0.1)
-            .with_smoother(SmoothingStyle::Logarithmic(1.0))
+            .with_smoother(SmoothingStyle::Exponential(20.0))
             .with_unit(" Hz"),
         }
     }
