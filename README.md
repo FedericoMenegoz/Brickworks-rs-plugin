@@ -7,7 +7,7 @@ This is a minimal working example of how to build an audio plugin using [nih-plu
 
 1. Run the following command to build the plugin:
    ```bash
-   cargo xtask bundle gain_plugin --release
+   cargo xtask bundle one_pole_plugin --release
    ```
 
 2. Copy the generated VST3/CLAP to your system's plugin folder so your DAW can detect it.
