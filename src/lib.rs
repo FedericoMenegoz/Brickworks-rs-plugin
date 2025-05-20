@@ -1,6 +1,7 @@
 use std::{num::NonZeroU32, sync::Arc};
 
-use brickworks_rs::c_wrapper::one_pole_wrapper::OnePoleWrapper;
+// use brickworks_rs::c_wrapper::one_pole_wrapper::OnePoleWrapper;
+use brickworks_rs::native::one_pole::OnePole;
 use nih_plug::prelude::*;
 
 const MAX_CHANNELS: usize = 2;
@@ -8,18 +9,23 @@ const MAX_SAMPLES: usize = 2048;
 
 pub struct OnePoleFilterPlugin {
     params: Arc<OnePoleFilterParams>,
-    filter: Option<Box<dyn OnePoleWrapperTrait>>,
+    filter: Option<Box<dyn OnePoleTrait>>,
     input_buffer: Vec<Vec<f32>>,
 }
 
-trait OnePoleWrapperTrait: Send {
+trait OnePoleTrait: Send {
     fn set_sample_rate(&mut self, rate: f32);
     fn set_cutoff(&mut self, cutoff: f32);
-    fn process(&mut self, input: &[Vec<f32>], output: Option<&mut [&mut [f32]]>, n_samples: usize);
+    fn process(
+        &mut self,
+        input: &[Vec<f32>],
+        output: Option<&mut [Option<&mut [f32]>]>,
+        n_samples: usize,
+    );
     fn reset(&mut self, x0: &[f32]);
 }
 
-impl<const N: usize> OnePoleWrapperTrait for OnePoleWrapper<N> {
+impl<const N: usize> OnePoleTrait for OnePole<N> {
     fn set_sample_rate(&mut self, rate: f32) {
         self.set_sample_rate(rate);
     }
@@ -28,7 +34,12 @@ impl<const N: usize> OnePoleWrapperTrait for OnePoleWrapper<N> {
         self.set_cutoff(cutoff);
     }
 
-    fn process(&mut self, input: &[Vec<f32>], output: Option<&mut [&mut [f32]]>, n_samples: usize) {
+    fn process(
+        &mut self,
+        input: &[Vec<f32>],
+        output: Option<&mut [Option<&mut [f32]>]>,
+        n_samples: usize,
+    ) {
         self.process(input, output, n_samples);
     }
 
@@ -129,8 +140,8 @@ impl Plugin for OnePoleFilterPlugin {
             .expect("Must have some channels!") as usize;
 
         self.filter = match n_channels {
-            1 => Some(Box::new(OnePoleWrapper::<1>::new())),
-            2 => Some(Box::new(OnePoleWrapper::<2>::new())),
+            1 => Some(Box::new(OnePole::<1>::new())),
+            2 => Some(Box::new(OnePole::<2>::new())),
             _ => panic!("Unsupported channel count"),
         };
 
@@ -170,7 +181,17 @@ impl Plugin for OnePoleFilterPlugin {
         self.filter
             .as_mut()
             .expect("One Pole Wrapper must be initialized by now.")
-            .process(&self.input_buffer, Some(buffer.as_slice()), n_samples);
+            .process(
+                &self.input_buffer,
+                Some(
+                    &mut buffer
+                        .as_slice()
+                        .iter_mut()
+                        .map(|ch| Some(&mut **ch))
+                        .collect::<Vec<_>>(),
+                ),
+                n_samples,
+            );
 
         ProcessStatus::Normal
     }

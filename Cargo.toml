@@ -9,7 +9,8 @@ nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = [
     "assert_process_allocs", # assert_process_allocs will complain if you alloc memory where you should not
     "standalone"    # to be able to have a standalone plugin to be faster at debugging
 ]}
-brickworks-rs = { git = "https://github.com/FedericoMenegoz/brickworks-rs.git" }
+# brickworks-rs = { git = "https://github.com/FedericoMenegoz/brickworks-rs.git" }
+brickworks-rs = { path = "../brickworks-rs" }
 
 [lib]
 crate-type = ["cdylib", "lib"]
