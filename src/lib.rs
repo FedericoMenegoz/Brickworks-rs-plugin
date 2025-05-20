@@ -16,7 +16,7 @@ trait OnePoleWrapperTrait: Send {
     fn set_sample_rate(&mut self, rate: f32);
     fn set_cutoff(&mut self, cutoff: f32);
     fn process(&mut self, input: &[Vec<f32>], output: Option<&mut [&mut [f32]]>, n_samples: usize);
-    fn reset(&mut self);
+    fn reset(&mut self, x0: &[f32]);
 }
 
 impl<const N: usize> OnePoleWrapperTrait for OnePoleWrapper<N> {
@@ -32,8 +32,8 @@ impl<const N: usize> OnePoleWrapperTrait for OnePoleWrapper<N> {
         self.process(input, output, n_samples);
     }
 
-    fn reset(&mut self) {
-        self.reset(None, None);
+    fn reset(&mut self, x0: &[f32]) {
+        self.reset(x0, None);
     }
 }
 
@@ -107,7 +107,13 @@ impl Plugin for OnePoleFilterPlugin {
 
     fn reset(&mut self) {
         if let Some(filter) = &mut self.filter {
-            filter.as_mut().reset();
+            filter.as_mut().reset(
+                &self
+                    .input_buffer
+                    .iter()
+                    .map(|channel| channel[0])
+                    .collect::<Vec<f32>>(),
+            );
         }
     }
 
