@@ -1,6 +1,7 @@
 use std::{num::NonZeroU32, sync::Arc};
-
-// use brickworks_rs::c_wrapper::one_pole_wrapper::OnePoleWrapper;
+// To use the C Wrapper
+// use brickworks_rs::c_wrapper::one_pole::OnePole;
+// To use the Native
 use brickworks_rs::native::one_pole::OnePole;
 use nih_plug::prelude::*;
 
