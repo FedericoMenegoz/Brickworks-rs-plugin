@@ -6,12 +6,6 @@ The brickworks-rs library offers both a native Rust port and a direct C binding 
 >Full wiki can be found [here](https://github.com/FedericoMenegoz/brickworks-rs/wiki/Nih-Plug).
 ## Filter Source Options
 
-The plugin supports both:
-- A **C wrapper**, to call the original C library directly
-- A **native** implementation, fully rewritten in idiomatic Rust
-
-Both options expose the same interface and can be swapped with a simple `use` statement:
-
 ```rust
 // To use the C wrapper version:
 use brickworks_rs::c_wrapper::one_pole::OnePole;
