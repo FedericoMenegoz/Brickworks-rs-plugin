@@ -1,95 +1,111 @@
 use std::{num::NonZeroU32, sync::Arc};
-// To use the C Wrapper
-// use brickworks_rs::c_wrapper::one_pole::OnePole;
-// To use the Native
-use brickworks_rs::native::one_pole::OnePole;
+
+use brickworks_rs::native::dist::Dist;
 use nih_plug::prelude::*;
 
+const ERROR_CHANNELS: &str = "Channels size does not match.";
+const ERROR_DIST_INIT: &str = "Dist must be initializated when calling process.";
 const MAX_CHANNELS: usize = 2;
 const MAX_SAMPLES: usize = 2048;
 
-pub struct OnePoleFilterPlugin {
-    params: Arc<OnePoleFilterParams>,
-    filter: Option<Box<dyn OnePoleTrait>>,
-    input_buffer: Vec<Vec<f32>>,
+pub struct DistPlugin {
+    params: Arc<DistParams>,
+    dist: Option<Box<dyn DistWrapper>>,
+    input: Vec<Vec<f32>>,
 }
 
-trait OnePoleTrait: Send {
-    fn set_sample_rate(&mut self, rate: f32);
-    fn set_cutoff(&mut self, cutoff: f32);
-    fn process(
-        &mut self,
-        input: &[Vec<f32>],
-        output: Option<&mut [Option<&mut [f32]>]>,
-        n_samples: usize,
-    );
-    fn reset(&mut self, x0: &[f32]);
-}
+impl Default for DistPlugin {
+    fn default() -> Self {
+        let mut input = Vec::with_capacity(MAX_CHANNELS);
+        (0..MAX_CHANNELS).for_each(|_| input.push(Vec::with_capacity(MAX_SAMPLES)));
 
-impl<const N: usize> OnePoleTrait for OnePole<N> {
-    fn set_sample_rate(&mut self, rate: f32) {
-        self.set_sample_rate(rate);
-    }
-
-    fn set_cutoff(&mut self, cutoff: f32) {
-        self.set_cutoff(cutoff);
-    }
-
-    fn process(
-        &mut self,
-        input: &[Vec<f32>],
-        output: Option<&mut [Option<&mut [f32]>]>,
-        n_samples: usize,
-    ) {
-        self.process(input, output, n_samples);
-    }
-
-    fn reset(&mut self, x0: &[f32]) {
-        self.reset(x0, None);
+        Self {
+            params: Arc::new(DistParams::default()),
+            dist: None,
+            input,
+        }
     }
 }
 
 #[derive(Params)]
-pub struct OnePoleFilterParams {
-    #[id = "cutoff"]
-    pub cutoff: FloatParam,
+pub struct DistParams {
+    #[id = "distortion"]
+    pub distortion: FloatParam,
+    #[id = "tone"]
+    pub tone: FloatParam,
+    #[id = "volume"]
+    pub volume: FloatParam,
 }
 
-impl Default for OnePoleFilterPlugin {
-    fn default() -> Self {
-        let mut input_buffer = Vec::with_capacity(MAX_CHANNELS);
-        for _ in 0..MAX_CHANNELS {
-            let channel: Vec<f32> = Vec::with_capacity(MAX_SAMPLES);
-            input_buffer.push(channel);
-        }
-        Self {
-            params: Arc::new(OnePoleFilterParams::default()),
-            filter: None,
-            input_buffer,
-        }
-    }
-}
-
-impl Default for OnePoleFilterParams {
+impl Default for DistParams {
     fn default() -> Self {
         Self {
-            cutoff: FloatParam::new(
-                "cutoff",
-                20000.0,
-                FloatRange::Skewed {
-                    min: 20.0,
-                    max: 20000.0,
-                    factor: 0.3,
-                },
+            distortion: FloatParam::new(
+                "distortion",
+                0.4,
+                FloatRange::Linear { min: 0.0, max: 1.0 },
             )
-            .with_smoother(SmoothingStyle::Exponential(20.0))
-            .with_unit(" Hz"),
+            .with_smoother(SmoothingStyle::None)
+            .with_step_size(0.01),
+            tone: FloatParam::new("tone", 0.7, FloatRange::Linear { min: 0.0, max: 1.0 })
+                .with_smoother(SmoothingStyle::None)
+                .with_step_size(0.01),
+            volume: FloatParam::new("volume", 0.6, FloatRange::Linear { min: 0.0, max: 1.0 })
+                .with_smoother(SmoothingStyle::None)
+                .with_step_size(0.01),
         }
     }
 }
 
-impl Plugin for OnePoleFilterPlugin {
-    const NAME: &'static str = "One Pole Low Pass Filter Plugin";
+trait DistWrapper: Send {
+    fn set_sample_rate(&mut self, sample_rate: f32);
+    fn reset(&mut self, x0: Option<f32>, y0: Option<&mut [f32]>);
+    // fn reset_multi(&mut self, x0: &[f32], y0: Option<&mut [f32]>);
+    fn process(&mut self, x: &[&[f32]], y: &mut [&mut [f32]], n_samples: usize);
+    fn set_distortion(&mut self, value: f32);
+    fn set_tone(&mut self, value: f32);
+    fn set_volume(&mut self, value: f32);
+}
+
+impl<const N_CHANNELS: usize> DistWrapper for Dist<N_CHANNELS> {
+    fn set_sample_rate(&mut self, sample_rate: f32) {
+        self.set_sample_rate(sample_rate);
+    }
+
+    fn reset(&mut self, x0: Option<f32>, y0: Option<&mut [f32]>) {
+        self.reset(x0, y0.map(|slice| slice.try_into().expect(ERROR_CHANNELS)));
+    }
+
+    // fn reset_multi(&mut self, x0: &[f32], y0: Option<&mut [f32]>) {
+    //     self.reset_multi(
+    //         x0.try_into().expect(ERROR_CHANNELS),
+    //         y0.map(|slice| slice.try_into().expect(ERROR_CHANNELS)),
+    //     );
+    // }
+
+    fn process(&mut self, x: &[&[f32]], y: &mut [&mut [f32]], n_samples: usize) {
+        self.process(
+            x.try_into().expect(ERROR_CHANNELS),
+            y.try_into().expect(ERROR_CHANNELS),
+            n_samples,
+        );
+    }
+
+    fn set_distortion(&mut self, value: f32) {
+        self.set_distortion(value);
+    }
+
+    fn set_tone(&mut self, value: f32) {
+        self.set_tone(value);
+    }
+
+    fn set_volume(&mut self, value: f32) {
+        self.set_volume(value);
+    }
+}
+
+impl Plugin for DistPlugin {
+    const NAME: &'static str = "Rodent Distortion Pedal";
     const VENDOR: &'static str = "CIMIL Thesis";
     const URL: &'static str = "https://github.com/FedericoMenegoz/Brickworks-rs-plugin";
     const EMAIL: &'static str = "fede.mene@icloud.com";
@@ -108,25 +124,12 @@ impl Plugin for OnePoleFilterPlugin {
             ..AudioIOLayout::const_default()
         },
     ];
-    const MIDI_INPUT: MidiConfig = MidiConfig::None;
-    const SAMPLE_ACCURATE_AUTOMATION: bool = true;
     type SysExMessage = ();
+
     type BackgroundTask = ();
 
     fn params(&self) -> Arc<dyn Params> {
         self.params.clone()
-    }
-
-    fn reset(&mut self) {
-        if let Some(filter) = &mut self.filter {
-            filter.as_mut().reset(
-                &self
-                    .input_buffer
-                    .iter()
-                    .map(|channel| channel[0])
-                    .collect::<Vec<f32>>(),
-            );
-        }
     }
 
     fn initialize(
@@ -140,25 +143,30 @@ impl Plugin for OnePoleFilterPlugin {
             .map(|c| c.get())
             .expect("Must have some channels!") as usize;
 
-        self.filter = match n_channels {
-            1 => Some(Box::new(OnePole::<1>::new())),
-            2 => Some(Box::new(OnePole::<2>::new())),
+        self.dist = match n_channels {
+            1 => Some(Box::new(Dist::<1>::new()) as Box<dyn DistWrapper>),
+            2 => Some(Box::new(Dist::<2>::new()) as Box<dyn DistWrapper>),
             _ => panic!("Unsupported channel count"),
         };
 
-        if let Some(filter) = &mut self.filter {
-            filter.set_sample_rate(buffer_config.sample_rate);
-        }
-
-        for i in 0..n_channels {
-            if i >= self.input_buffer.len() {
-                self.input_buffer
+        if let Some(dist) = &mut self.dist {
+            dist.set_sample_rate(buffer_config.sample_rate);
+        };
+        for channel in 0..n_channels {
+            if channel >= self.input.len() {
+                self.input
                     .push(vec![0.0; buffer_config.max_buffer_size as usize]);
             } else {
-                self.input_buffer[i].resize(buffer_config.max_buffer_size as usize, 0.0);
+                self.input[channel].resize(buffer_config.max_buffer_size as usize, 0.0);
             }
         }
         true
+    }
+
+    fn reset(&mut self) {
+        if let Some(dist) = &mut self.dist {
+            dist.as_mut().reset(None, None);
+        }
     }
 
     fn process(
@@ -167,47 +175,41 @@ impl Plugin for OnePoleFilterPlugin {
         _aux: &mut AuxiliaryBuffers,
         _context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
-        let n_samples = buffer.samples();
-        self.filter
-            .as_mut()
-            .expect("One Pole Wrapper must be initialized by now.")
-            .set_cutoff(self.params.cutoff.value());
+        let num_samples = buffer.samples();
+        let num_channels = buffer.channels();
+
+        let dist = self.dist.as_mut().expect(ERROR_DIST_INIT);
+        dist.set_distortion(self.params.distortion.value());
+        dist.set_tone(self.params.tone.value());
+        dist.set_volume(self.params.volume.value());
 
         for (sample_index, samples_channel) in buffer.iter_samples().enumerate() {
             for (channel_index, sample) in samples_channel.into_iter().enumerate() {
-                self.input_buffer[channel_index][sample_index] = *sample
+                self.input[channel_index][sample_index] = *sample;
             }
         }
 
-        self.filter
-            .as_mut()
-            .expect("One Pole Wrapper must be initialized by now.")
-            .process(
-                &self.input_buffer,
-                Some(
-                    &mut buffer
-                        .as_slice()
-                        .iter_mut()
-                        .map(|ch| Some(&mut **ch))
-                        .collect::<Vec<_>>(),
-                ),
-                n_samples,
-            );
+        let mut input_refs: [&[f32]; MAX_CHANNELS] = [&[]; MAX_CHANNELS];
+        for (ch, item) in input_refs.iter_mut().enumerate().take(num_channels) {
+            *item = &self.input[ch][..num_samples];
+        }
+
+        dist.process(&input_refs[..num_channels], buffer.as_slice(), num_samples);
 
         ProcessStatus::Normal
     }
 }
 
-impl Vst3Plugin for OnePoleFilterPlugin {
-    const VST3_CLASS_ID: [u8; 16] = *b"MyFirstPlugin666";
+impl Vst3Plugin for DistPlugin {
+    const VST3_CLASS_ID: [u8; 16] = *b"DistortionPlugin";
 
     const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] = &[Vst3SubCategory::Fx];
 }
 
-impl ClapPlugin for OnePoleFilterPlugin {
-    const CLAP_ID: &'static str = "com.cimil-thesis.one-pole";
+impl ClapPlugin for DistPlugin {
+    const CLAP_ID: &'static str = "com.cimil-thesis.dist";
     const CLAP_DESCRIPTION: Option<&'static str> =
-        Some("A one pole low pass filter example plugin");
+        Some("Distortion effect. Loosely inspired to the 'rodent' distortion pedal.");
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
     const CLAP_SUPPORT_URL: Option<&'static str> = None;
     const CLAP_FEATURES: &'static [ClapFeature] = &[
@@ -218,5 +220,5 @@ impl ClapPlugin for OnePoleFilterPlugin {
     ];
 }
 
-nih_export_vst3!(OnePoleFilterPlugin);
-nih_export_clap!(OnePoleFilterPlugin);
+nih_export_vst3!(DistPlugin);
+nih_export_clap!(DistPlugin);
