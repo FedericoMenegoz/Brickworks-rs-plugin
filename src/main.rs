@@ -1,6 +1,28 @@
-use dist_plugin::DistPlugin;
+use dist_plugin::factory::{CFactory, RustFactory};
+use dist_plugin::plugin::DistPlugin;
 use nih_plug::nih_export_standalone;
+use std::io::{self, Write};
 
 fn main() {
-    nih_export_standalone::<DistPlugin>();
+    println!("Select backend:");
+    println!("1 = RustDist");
+    println!("2 = CDist");
+    print!("Choice: ");
+    io::stdout().flush().unwrap();
+
+    let mut choice = String::new();
+    io::stdin().read_line(&mut choice).unwrap();
+
+    match choice.trim() {
+        "1" => {
+            nih_export_standalone::<DistPlugin<RustFactory>>();
+        }
+        "2" => {
+            nih_export_standalone::<DistPlugin<CFactory>>();
+        }
+        _ => {
+            eprintln!("Invalid choice, defaulting to RustDist.");
+            nih_export_standalone::<DistPlugin<RustFactory>>();
+        }
+    }
 }
