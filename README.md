@@ -6,16 +6,10 @@ The brickworks-rs library offers both a native Rust port and a direct C binding 
 >Full wiki can be found [here](https://github.com/FedericoMenegoz/brickworks-rs/wiki/Nih-Plug).
 ## Filter Source Options
 
-```rust
-// To use the C wrapper version:
-use brickworks_rs::c_wrapper::dist::Dist;
-// To use the native Rust version:
-use brickworks_rs::native::dist::Dist;
-```
 
 ## Build and Test the VST3/CLAP in a DAW
 
-1. Run the following command to build the plugin:
+1. Run the following command to build the plugin, it will create both the native and the binding version:
    ```bash
    cargo xtask bundle dist_plugin --release
    ```

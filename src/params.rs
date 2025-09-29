@@ -1,5 +1,6 @@
 use nih_plug::prelude::*;
 
+// parameters exposed to the host
 #[derive(Params)]
 pub struct DistParams {
     #[id = "distortion"]

@@ -1,4 +1,4 @@
-use dist_plugin::factory::{CFactory, RustFactory};
+use dist_plugin::builder::{CBuilder, RustBuilder};
 use dist_plugin::plugin::DistPlugin;
 use nih_plug::nih_export_standalone;
 use std::io::{self, Write};
@@ -15,14 +15,14 @@ fn main() {
 
     match choice.trim() {
         "1" => {
-            nih_export_standalone::<DistPlugin<RustFactory>>();
+            nih_export_standalone::<DistPlugin<RustBuilder>>();
         }
         "2" => {
-            nih_export_standalone::<DistPlugin<CFactory>>();
+            nih_export_standalone::<DistPlugin<CBuilder>>();
         }
         _ => {
             eprintln!("Invalid choice, defaulting to RustDist.");
-            nih_export_standalone::<DistPlugin<RustFactory>>();
+            nih_export_standalone::<DistPlugin<RustBuilder>>();
         }
     }
 }

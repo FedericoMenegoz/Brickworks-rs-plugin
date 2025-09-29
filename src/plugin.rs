@@ -1,4 +1,4 @@
-use crate::{factory::DistFactory, params::DistParams, wrapper::DistWrapper};
+use crate::{builder::DistBuilder, params::DistParams, wrapper::DistWrapper};
 use nih_plug::prelude::*;
 use std::{num::NonZeroU32, sync::Arc};
 
@@ -7,12 +7,16 @@ const MAX_CHANNELS: usize = 2;
 const MAX_SAMPLES: usize = 2048;
 
 pub struct DistPlugin<D> {
+    // parameters given to the host
     params: Arc<DistParams>,
+    // actual dist
     dist: Option<Box<dyn DistWrapper>>,
     input: Vec<Vec<f32>>,
+    // zero-size placeholder that links either to port or native dist
     _marker: std::marker::PhantomData<D>,
 }
 
+// requested Default in order to implement the Plugin trait
 impl<D> Default for DistPlugin<D> {
     fn default() -> Self {
         let mut input = Vec::with_capacity(MAX_CHANNELS);
@@ -27,11 +31,12 @@ impl<D> Default for DistPlugin<D> {
     }
 }
 
+// plugin implementation for both rust and c version
 impl<D> Plugin for DistPlugin<D>
 where
-    D: DistFactory + 'static + Send,
+    D: DistBuilder + 'static + Send,
 {
-    const NAME: &'static str = "Rodent Distortion Pedal";
+    const NAME: &'static str = D::NAME;
     const VENDOR: &'static str = "CIMIL Thesis";
     const URL: &'static str = "https://github.com/FedericoMenegoz/Brickworks-rs-plugin";
     const EMAIL: &'static str = "fede.mene@icloud.com";
@@ -124,16 +129,15 @@ where
 
 impl<D> Vst3Plugin for DistPlugin<D>
 where
-    D: DistFactory + 'static + Send,
+    D: DistBuilder + 'static + Send,
 {
-    const VST3_CLASS_ID: [u8; 16] = *b"DistortionPlugin";
-
+    const VST3_CLASS_ID: [u8; 16] = D::VST3_CLASS_ID;
     const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] = &[Vst3SubCategory::Fx];
 }
 
 impl<D> ClapPlugin for DistPlugin<D>
 where
-    D: DistFactory + 'static + Send,
+    D: DistBuilder + 'static + Send,
 {
     const CLAP_ID: &'static str = "com.cimil-thesis.dist";
     const CLAP_DESCRIPTION: Option<&'static str> =
