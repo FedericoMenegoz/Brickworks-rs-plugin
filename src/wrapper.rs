@@ -1,4 +1,6 @@
-use brickworks_rs::{c_wrapper::dist::Dist as CDist, native::dist::Dist as RustDist};
+use brickworks_rs::{
+    c_wrapper::dist::Dist as CDistBW, 
+    native::dist::Dist as RustDistBW};
 
 const ERROR_CHANNELS: &str = "Channels size does not match.";
 
@@ -18,15 +20,15 @@ macro_rules! impl_dist_wrapper {
     ($type:ty) => {
         impl<const N_CHANNELS: usize> DistWrapper for $type {
             fn set_sample_rate(&mut self, sample_rate: f32) {
-                self.set_sample_rate(sample_rate);
+                self.dist.set_sample_rate(sample_rate);
             }
 
             fn reset(&mut self, x0: Option<f32>, y0: Option<&mut [f32]>) {
-                self.reset(x0, y0.map(|slice| slice.try_into().expect(ERROR_CHANNELS)));
+                self.dist.reset(x0, y0.map(|slice| slice.try_into().expect(ERROR_CHANNELS)));
             }
 
             fn process(&mut self, x: &[&[f32]], y: &mut [&mut [f32]], n_samples: usize) {
-                self.process(
+                self.dist.process(
                     x.try_into().expect(ERROR_CHANNELS),
                     y.try_into().expect(ERROR_CHANNELS),
                     n_samples,
@@ -34,15 +36,15 @@ macro_rules! impl_dist_wrapper {
             }
 
             fn set_distortion(&mut self, value: f32) {
-                self.set_distortion(value);
+                self.dist.set_distortion(value);
             }
 
             fn set_tone(&mut self, value: f32) {
-                self.set_tone(value);
+                self.dist.set_tone(value);
             }
 
             fn set_volume(&mut self, value: f32) {
-                self.set_volume(value);
+                self.dist.set_volume(value);
             }
         }
     };
@@ -51,3 +53,11 @@ macro_rules! impl_dist_wrapper {
 // expand for both versions
 impl_dist_wrapper!(RustDist<N_CHANNELS>);
 impl_dist_wrapper!(CDist<N_CHANNELS>);
+
+
+pub struct RustDist<const N_CHANNELS: usize> {
+    dist: RustDistBW<N_CHANNELS>,
+}
+pub struct CDist<const N_CHANNELS: usize> {
+    dist: CDistBW<N_CHANNELS>,
+}

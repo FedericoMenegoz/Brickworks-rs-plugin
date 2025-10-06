@@ -1,5 +1,4 @@
-use super::wrapper::DistWrapper;
-use brickworks_rs::{c_wrapper::dist::Dist as CDist, native::dist::Dist as RustDist};
+use super::wrapper::{DistWrapper, CDist, RustDist};
 
 // avoid repetition since both versions share the same api
 // enables calling nih macros by just specifying the type
