@@ -21,6 +21,16 @@ The brickworks-rs library offers both a native Rust port and a direct C binding 
    sudo cp -r target/bundled/dist_plugin.vst3 /Library/Audio/Plug-Ins/VST3/
    ```
 
+## Debug
+To run the plugin in debug mode, useful for checking issues like memory allocations during processing, use:
+
+```bash
+cargo build                # build the standalone
+./target/debug/dist_plugin # run the standalone
+# On macOS, if you get "Received 558 samples, while the configured buffer size is 512":
+./target/debug/dist_plugin -r 44100
+
+
 
 ## License
 Brickworks-rs-plugin is distributed under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html) License.

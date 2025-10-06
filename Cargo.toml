@@ -14,7 +14,8 @@ nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = [
     "standalone"    
 ]}
 
-brickworks-rs = { git = "https://github.com/FedericoMenegoz/brickworks-rs.git", rev = "0f6f0a0" }
+brickworks-rs = { git = "https://github.com/FedericoMenegoz/brickworks-rs.git", rev = "06d42f5"}
+
 
 [lib]
 crate-type = [

@@ -92,7 +92,7 @@ where
 
     fn reset(&mut self) {
         if let Some(dist) = &mut self.dist {
-            dist.as_mut().reset(None, None);
+            dist.as_mut().reset();
         }
     }
 
@@ -121,7 +121,11 @@ where
             *item = &self.input[ch][..num_samples];
         }
 
-        dist.process(&input_refs[..num_channels], buffer.as_slice(), num_samples);
+        dist.process(
+            &mut input_refs[..num_channels],
+            buffer.as_slice(),
+            num_samples,
+        );
 
         ProcessStatus::Normal
     }

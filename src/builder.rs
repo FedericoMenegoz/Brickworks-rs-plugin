@@ -1,4 +1,4 @@
-use super::wrapper::{DistWrapper, CDist, RustDist};
+use super::wrapper::{CDist, DistWrapper, RustDist};
 
 // avoid repetition since both versions share the same api
 // enables calling nih macros by just specifying the type
