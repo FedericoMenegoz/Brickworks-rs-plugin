@@ -29,7 +29,7 @@ cargo build                # build the standalone
 ./target/debug/dist_plugin # run the standalone
 # On macOS, if you get "Received 558 samples, while the configured buffer size is 512":
 ./target/debug/dist_plugin -r 44100
-
+```
 
 
 ## License
