@@ -4,6 +4,9 @@
 # Mac-OS
 .DS_Store
 
+# MVSC
+.vs
+
 # vscode
 .vscode/
 *.code-workspace
