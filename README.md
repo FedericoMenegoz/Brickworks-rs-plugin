@@ -25,10 +25,15 @@ The brickworks-rs library offers both a native Rust port and a direct C binding 
 To run the plugin in debug mode, useful for checking issues like memory allocations during processing, use:
 
 ```bash
-cargo build                # build the standalone
-./target/debug/dist_plugin # run the standalone
-# On macOS, if you get "Received 558 samples, while the configured buffer size is 512":
+# build the standalone
+cargo build
+
+# run the standalone
+./target/debug/dist_plugin 
+
+# To Fix: `Received 558 samples, while the configured buffer size is 512`
 ./target/debug/dist_plugin -r 44100
+
 ```
 
 
