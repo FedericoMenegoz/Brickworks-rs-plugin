@@ -9,7 +9,8 @@ const OVERSAMPLE_FACTOR: i32 = 2;
 pub trait DistWrapper: Send {
     fn set_sample_rate(&mut self, sample_rate: f32);
     fn reset(&mut self);
-    fn process(&mut self, x: &[&[f32]], y: &mut [&mut [f32]], n_samples: usize);
+    // fn process(&mut self, x: &[&[f32]], y: &mut [&mut [f32]], n_samples: usize);
+    fn process(&mut self, x: &[f32], y: &mut [f32], n_samples: usize, channel: usize);
     fn set_distortion(&mut self, value: f32);
     fn set_tone(&mut self, value: f32);
     fn set_volume(&mut self, value: f32);
@@ -20,18 +21,23 @@ pub trait DistWrapper: Send {
 macro_rules! impl_dist_wrapper {
     ($type:ty) => {
         impl<const N_CHANNELS: usize> DistWrapper for $type {
+            
+            #[inline(always)]
             fn set_sample_rate(&mut self, sample_rate: f32) {
                 self.dist.set_sample_rate(sample_rate);
             }
 
+            #[inline(always)]
             fn reset(&mut self) {
                 self.dist.reset(Some(0.0), None);
                 self.src_up.reset(Some(0.0), None);
                 self.src_down.reset(Some(0.0), None);
             }
 
-            fn process(&mut self, x: &[&[f32]], y: &mut [&mut [f32]], n_samples: usize) {
-                (0..N_CHANNELS).for_each(|channel| {
+            // fn process(&mut self, x: &[&[f32]], y: &mut [&mut [f32]], n_samples: usize) {
+            #[inline(always)]
+            fn process(&mut self, x: &[f32], y: &mut [f32], n_samples: usize, channel: usize) {
+                // (0..N_CHANNELS).for_each(|channel| {
                     let mut i = 0;
                     while i < n_samples {
                         let n =
@@ -39,10 +45,14 @@ macro_rules! impl_dist_wrapper {
                         // upsampling
                         self.src_up.coeffs.process(
                             &mut self.src_up.states[channel],
-                            &x[channel][i..],
+                            &x[i..],
                             &mut self.buffer_a,
                             n,
                         );
+                        // brickworks process the samples one at the time 
+                        // it reads it then make the calculation 
+                        // and at the end it save it, using only one buffer
+                        // should be fine
                         unsafe {
                             let read_ptr = self.buffer_a.as_ptr();
                             let write_ptr = self.buffer_a.as_mut_ptr();
@@ -58,22 +68,25 @@ macro_rules! impl_dist_wrapper {
                         self.src_down.coeffs.process(
                             &mut self.src_down.states[channel],
                             &self.buffer_a,
-                            &mut y[channel][i..],
+                            &mut y[i..],
                             n << 1,
                         );
                         i += n;
                     }
-                });
+                // });
             }
 
+            #[inline(always)]
             fn set_distortion(&mut self, value: f32) {
                 self.dist.set_distortion(value);
             }
 
+            #[inline(always)]
             fn set_tone(&mut self, value: f32) {
                 self.dist.set_tone(value);
             }
 
+            #[inline(always)]
             fn set_volume(&mut self, value: f32) {
                 self.dist.set_volume(value);
             }
@@ -92,6 +105,7 @@ macro_rules! define_dist_struct {
         }
 
         impl<const N_CHANNELS: usize> $name<N_CHANNELS> {
+            #[inline(always)]
             pub fn new() -> Self {
                 Self {
                     dist: <$dist_type>::new(),

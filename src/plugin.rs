@@ -3,15 +3,12 @@ use nih_plug::prelude::*;
 use std::{num::NonZeroU32, sync::Arc};
 
 const ERROR_DIST_INIT: &str = "Dist must be initialized when calling process.";
-const MAX_CHANNELS: usize = 2;
-const MAX_SAMPLES: usize = 2048;
 
 pub struct DistPlugin<D> {
     // parameters given to the host
     params: Arc<DistParams>,
     // actual dist
     dist: Option<Box<dyn DistWrapper>>,
-    input: Vec<Vec<f32>>,
     // zero-size placeholder that links either to port or native dist
     _marker: std::marker::PhantomData<D>,
 }
@@ -19,13 +16,9 @@ pub struct DistPlugin<D> {
 // requested Default in order to implement the Plugin trait
 impl<D> Default for DistPlugin<D> {
     fn default() -> Self {
-        let mut input = Vec::with_capacity(MAX_CHANNELS);
-        (0..MAX_CHANNELS).for_each(|_| input.push(Vec::with_capacity(MAX_SAMPLES)));
-
         Self {
             params: Arc::new(DistParams::default()),
             dist: None,
-            input,
             _marker: std::marker::PhantomData,
         }
     }
@@ -59,10 +52,12 @@ where
 
     type BackgroundTask = ();
 
+    #[inline(always)]
     fn params(&self) -> Arc<dyn Params> {
         self.params.clone()
     }
 
+    #[inline(always)]
     fn initialize(
         &mut self,
         audio_io_layout: &AudioIOLayout,
@@ -79,23 +74,25 @@ where
         if let Some(dist) = &mut self.dist {
             dist.set_sample_rate(buffer_config.sample_rate);
         };
-        for channel in 0..n_channels {
-            if channel >= self.input.len() {
-                self.input
-                    .push(vec![0.0; buffer_config.max_buffer_size as usize]);
-            } else {
-                self.input[channel].resize(buffer_config.max_buffer_size as usize, 0.0);
-            }
-        }
+        // for channel in 0..n_channels {
+        //     if channel >= self.input.len() {
+        //         self.input
+        //             .push(vec![0.0; buffer_config.max_buffer_size as usize]);
+        //     } else {
+        //         self.input[channel].resize(buffer_config.max_buffer_size as usize, 0.0);
+        //     }
+        // }
         true
     }
 
+    #[inline(always)]
     fn reset(&mut self) {
         if let Some(dist) = &mut self.dist {
             dist.as_mut().reset();
         }
     }
 
+    #[inline(always)]
     fn process(
         &mut self,
         buffer: &mut Buffer,
@@ -104,28 +101,32 @@ where
     ) -> ProcessStatus {
         let num_samples = buffer.samples();
         let num_channels = buffer.channels();
-
         let dist = self.dist.as_mut().expect(ERROR_DIST_INIT);
         dist.set_distortion(self.params.distortion.value());
         dist.set_tone(self.params.tone.value());
         dist.set_volume(self.params.volume.value());
+        (0..num_channels).for_each(|channel| {    
+            // for (sample_index, samples_channel) in buffer.iter_samples().enumerate() {
+            //     for (channel_index, sample) in samples_channel.into_iter().enumerate() {
+            //         self.input[channel_index][sample_index] = *sample;
+            //     }
+            // }
+            let read_ptr = buffer.as_slice_immutable()[channel].as_ptr();
+            let write_ptr = buffer.as_slice()[channel].as_mut_ptr();
 
-        for (sample_index, samples_channel) in buffer.iter_samples().enumerate() {
-            for (channel_index, sample) in samples_channel.into_iter().enumerate() {
-                self.input[channel_index][sample_index] = *sample;
+            // let mut input_refs: [&[f32]; MAX_CHANNELS] = [&[]; MAX_CHANNELS];
+            // for (ch, item) in input_refs.iter_mut().enumerate().take(num_channels) {
+            //     *item = &self.input[ch][..num_samples];
+            // }
+            unsafe {
+                dist.process(
+                    std::slice::from_raw_parts(read_ptr, num_samples),
+                    std::slice::from_raw_parts_mut(write_ptr, num_samples),
+                    num_samples,
+                    channel,
+                );
             }
-        }
-
-        let mut input_refs: [&[f32]; MAX_CHANNELS] = [&[]; MAX_CHANNELS];
-        for (ch, item) in input_refs.iter_mut().enumerate().take(num_channels) {
-            *item = &self.input[ch][..num_samples];
-        }
-
-        dist.process(
-            &mut input_refs[..num_channels],
-            buffer.as_slice(),
-            num_samples,
-        );
+        });
 
         ProcessStatus::Normal
     }
