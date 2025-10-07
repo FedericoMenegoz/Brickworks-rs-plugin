@@ -43,17 +43,21 @@ macro_rules! impl_dist_wrapper {
                             &mut self.buffer_a,
                             n,
                         );
-                        // processing
-                        self.dist.coeffs.process(
-                            &mut self.dist.states[channel],
-                            &self.buffer_a,
-                            &mut self.buffer_b,
-                            n << 1,
-                        );
+                        unsafe {
+                            let read_ptr = self.buffer_a.as_ptr();
+                            let write_ptr = self.buffer_a.as_mut_ptr();
+                            // processing
+                            self.dist.coeffs.process(
+                                &mut self.dist.states[channel],
+                                std::slice::from_raw_parts(read_ptr, self.buffer_a.len()),
+                                std::slice::from_raw_parts_mut(write_ptr, self.buffer_a.len()),
+                                n << 1,
+                            );
+                        }
                         // downsampling
                         self.src_down.coeffs.process(
                             &mut self.src_down.states[channel],
-                            &self.buffer_b,
+                            &self.buffer_a,
                             &mut y[channel][i..],
                             n << 1,
                         );
@@ -84,7 +88,7 @@ macro_rules! define_dist_struct {
             pub src_up: $src_type,
             pub src_down: $src_type,
             pub buffer_a: [f32; BUFFER_SIZE],
-            pub buffer_b: [f32; BUFFER_SIZE],
+            // pub buffer_b: [f32; BUFFER_SIZE],
         }
 
         impl<const N_CHANNELS: usize> $name<N_CHANNELS> {
@@ -94,7 +98,7 @@ macro_rules! define_dist_struct {
                     src_up: <$src_type>::new(OVERSAMPLE_FACTOR),
                     src_down: <$src_type>::new(-OVERSAMPLE_FACTOR),
                     buffer_a: [0.0; BUFFER_SIZE],
-                    buffer_b: [0.0; BUFFER_SIZE],
+                    // buffer_b: [0.0; BUFFER_SIZE],
                 }
             }
         }
