@@ -5,7 +5,7 @@ use super::wrapper::{CDist, DistWrapper, RustDist};
 pub trait DistBuilder {
     const NAME: &'static str;
     const VST3_CLASS_ID: [u8; 16];
-    fn make(n_channels: usize) -> Box<dyn DistWrapper>;
+    fn make(n_channels: u32) -> Box<dyn DistWrapper>;
 }
 
 pub struct RustBuilder;
@@ -14,7 +14,7 @@ impl DistBuilder for RustBuilder {
 
     const VST3_CLASS_ID: [u8; 16] = *b"*RustDistortion*";
 
-    fn make(n_channels: usize) -> Box<dyn DistWrapper> {
+    fn make(n_channels: u32) -> Box<dyn DistWrapper> {
         match n_channels {
             1 => Box::new(RustDist::<1>::new()),
             2 => Box::new(RustDist::<2>::new()),
@@ -28,7 +28,7 @@ impl DistBuilder for CBuilder {
     const NAME: &'static str = "C Distortion";
     const VST3_CLASS_ID: [u8; 16] = *b"**C_Distortion**";
 
-    fn make(n_channels: usize) -> Box<dyn DistWrapper> {
+    fn make(n_channels: u32) -> Box<dyn DistWrapper> {
         match n_channels {
             1 => Box::new(CDist::<1>::new()),
             2 => Box::new(CDist::<2>::new()),

@@ -21,7 +21,6 @@ pub trait DistWrapper: Send {
 macro_rules! impl_dist_wrapper {
     ($type:ty) => {
         impl<const N_CHANNELS: usize> DistWrapper for $type {
-            
             #[inline(always)]
             fn set_sample_rate(&mut self, sample_rate: f32) {
                 self.dist.set_sample_rate(sample_rate);
@@ -37,43 +36,39 @@ macro_rules! impl_dist_wrapper {
             // fn process(&mut self, x: &[&[f32]], y: &mut [&mut [f32]], n_samples: usize) {
             #[inline(always)]
             fn process(&mut self, x: &[f32], y: &mut [f32], n_samples: usize, channel: usize) {
-                // (0..N_CHANNELS).for_each(|channel| {
-                    let mut i = 0;
-                    while i < n_samples {
-                        let n =
-                            (n_samples as i32 - i as i32).min((BUFFER_SIZE >> 1) as i32) as usize;
-                        // upsampling
-                        self.src_up.coeffs.process(
-                            &mut self.src_up.states[channel],
-                            &x[i..],
-                            &mut self.buffer_a,
-                            n,
-                        );
-                        // brickworks process the samples one at the time 
-                        // it reads it then make the calculation 
-                        // and at the end it save it, using only one buffer
-                        // should be fine
-                        unsafe {
-                            let read_ptr = self.buffer_a.as_ptr();
-                            let write_ptr = self.buffer_a.as_mut_ptr();
-                            // processing
-                            self.dist.coeffs.process(
-                                &mut self.dist.states[channel],
-                                std::slice::from_raw_parts(read_ptr, self.buffer_a.len()),
-                                std::slice::from_raw_parts_mut(write_ptr, self.buffer_a.len()),
-                                n << 1,
-                            );
-                        }
-                        // downsampling
-                        self.src_down.coeffs.process(
-                            &mut self.src_down.states[channel],
-                            &self.buffer_a,
-                            &mut y[i..],
+                let mut i = 0;
+                while i < n_samples {
+                    let n = (n_samples as i32 - i as i32).min((BUFFER_SIZE >> 1) as i32) as usize;
+                    // upsampling
+                    self.src_up.coeffs.process(
+                        &mut self.src_up.states[channel],
+                        &x[i..],
+                        &mut self.buffer_a,
+                        n,
+                    );
+                    // brickworks process the samples one at the time
+                    // it reads it then make the calculation
+                    // and at the end it save it, using only one buffer
+                    unsafe {
+                        let read_ptr = self.buffer_a.as_ptr();
+                        let write_ptr = self.buffer_a.as_mut_ptr();
+                        // processing
+                        self.dist.coeffs.process(
+                            &mut self.dist.states[channel],
+                            std::slice::from_raw_parts(read_ptr, self.buffer_a.len()),
+                            std::slice::from_raw_parts_mut(write_ptr, self.buffer_a.len()),
                             n << 1,
                         );
-                        i += n;
                     }
-                // });
+                    // downsampling
+                    self.src_down.coeffs.process(
+                        &mut self.src_down.states[channel],
+                        &self.buffer_a,
+                        &mut y[i..],
+                        n << 1,
+                    );
+                    i += n;
+                }
             }
 
             #[inline(always)]
@@ -114,6 +109,12 @@ macro_rules! define_dist_struct {
                     buffer_a: [0.0; BUFFER_SIZE],
                     // buffer_b: [0.0; BUFFER_SIZE],
                 }
+            }
+        }
+
+        impl<const N_CHANNELS: usize> Default for $name<N_CHANNELS> {
+            fn default() -> Self {
+                Self::new()
             }
         }
 
