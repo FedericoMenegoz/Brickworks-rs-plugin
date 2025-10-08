@@ -14,8 +14,8 @@ nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = [
     "standalone"    
 ]}
 
-# brickworks-rs = { git = "https://github.com/FedericoMenegoz/brickworks-rs.git", rev = "a50afca"}
-brickworks-rs = { path = "../brickworks-rs" }
+brickworks-rs = { git = "https://github.com/FedericoMenegoz/brickworks-rs.git", rev = "a50afca"}
+# brickworks-rs = { path = "../brickworks-rs" }
 
 [profile.release]
 lto = "fat"
