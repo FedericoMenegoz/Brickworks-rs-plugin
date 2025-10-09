@@ -16,17 +16,37 @@ impl Default for DistParams {
         Self {
             distortion: FloatParam::new(
                 "distortion",
-                0.4,
-                FloatRange::Linear { min: 0.0, max: 1.0 },
+                40.0,
+                FloatRange::Linear {
+                    min: 0.0,
+                    max: 100.0,
+                },
             )
             .with_smoother(SmoothingStyle::None)
-            .with_step_size(0.01),
-            tone: FloatParam::new("tone", 0.7, FloatRange::Linear { min: 0.0, max: 1.0 })
-                .with_smoother(SmoothingStyle::None)
-                .with_step_size(0.01),
-            volume: FloatParam::new("volume", 0.6, FloatRange::Linear { min: 0.0, max: 1.0 })
-                .with_smoother(SmoothingStyle::None)
-                .with_step_size(0.01),
+            .with_step_size(0.01)
+            .with_unit("%"),
+            tone: FloatParam::new(
+                "tone",
+                70.0,
+                FloatRange::Linear {
+                    min: 0.0,
+                    max: 100.0,
+                },
+            )
+            .with_smoother(SmoothingStyle::None)
+            .with_step_size(0.01)
+            .with_unit("%"),
+            volume: FloatParam::new(
+                "volume",
+                60.0,
+                FloatRange::Linear {
+                    min: 0.0,
+                    max: 100.0,
+                },
+            )
+            .with_smoother(SmoothingStyle::None)
+            .with_step_size(0.01)
+            .with_unit("%"),
         }
     }
 }
