@@ -1,4 +1,4 @@
-use crate::{builder::DistBuilder, params::DistParams, wrapper::DistWrapper};
+use crate::{backend::{DistFactory, DistBackend}, params::DistParams};
 use nih_plug::prelude::*;
 use std::{num::NonZeroU32, sync::Arc};
 
@@ -9,7 +9,7 @@ pub struct DistPlugin<D> {
     // parameters given to the host
     params: Arc<DistParams>,
     // actual dist
-    dist: Option<Box<dyn DistWrapper>>,
+    dist: Option<Box<dyn DistBackend>>,
     // zero-size placeholder that links either to port or native dist
     _marker: std::marker::PhantomData<D>,
 }
@@ -28,7 +28,7 @@ impl<D> Default for DistPlugin<D> {
 // plugin implementation for both rust and c version
 impl<D> Plugin for DistPlugin<D>
 where
-    D: DistBuilder + 'static + Send,
+    D: DistFactory + 'static + Send,
 {
     const NAME: &'static str = D::NAME;
     const VENDOR: &'static str = "CIMIL Thesis";
@@ -85,9 +85,9 @@ where
         let num_samples = buffer.samples();
 
         let dist = self.dist.as_mut().expect(ERROR_DIST_INIT);
-        dist.set_distortion(self.params.distortion.value());
-        dist.set_tone(self.params.tone.value());
-        dist.set_volume(self.params.volume.value());
+        dist.set_distortion(self.params.distortion.value()*0.01);
+        dist.set_tone(self.params.tone.value()*0.01);
+        dist.set_volume(self.params.volume.value()*0.01);
 
         let read_ptr = buffer.as_slice_immutable()[CHANNEL].as_ptr();
         let write_ptr = buffer.as_slice()[CHANNEL].as_mut_ptr();
@@ -108,7 +108,7 @@ where
 
 impl<D> Vst3Plugin for DistPlugin<D>
 where
-    D: DistBuilder + 'static + Send,
+    D: DistFactory + 'static + Send,
 {
     const VST3_CLASS_ID: [u8; 16] = D::VST3_CLASS_ID;
     const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] = &[Vst3SubCategory::Fx];
@@ -116,7 +116,7 @@ where
 
 impl<D> ClapPlugin for DistPlugin<D>
 where
-    D: DistBuilder + 'static + Send,
+    D: DistFactory + 'static + Send,
 {
     const CLAP_ID: &'static str = "com.cimil-thesis.dist";
     const CLAP_DESCRIPTION: Option<&'static str> =

@@ -6,10 +6,9 @@ use brickworks_rs::{
 const BUFFER_SIZE: usize = 32;
 const OVERSAMPLE_FACTOR: i32 = 2;
 // abstraction over rust port and binding of bw_dist
-pub trait DistWrapper: Send {
+pub trait DistBackend: Send {
     fn set_sample_rate(&mut self, sample_rate: f32);
     fn reset(&mut self);
-    // fn process(&mut self, x: &[&[f32]], y: &mut [&mut [f32]], n_samples: usize);
     fn process(&mut self, x: &[f32], y: &mut [f32], n_samples: usize, channel: usize);
     fn set_distortion(&mut self, value: f32);
     fn set_tone(&mut self, value: f32);
@@ -17,13 +16,13 @@ pub trait DistWrapper: Send {
 }
 
 // macro to avoid repetition since both backends share the same api
-// implements DistWrapper for the given type
+// implements DistBackend for the given type
 macro_rules! impl_dist_wrapper {
     ($type:ty) => {
-        impl<const N_CHANNELS: usize> DistWrapper for $type {
+        impl<const N_CHANNELS: usize> DistBackend for $type {
             #[inline(always)]
             fn set_sample_rate(&mut self, sample_rate: f32) {
-                self.dist.set_sample_rate(sample_rate);
+                self.dist.set_sample_rate(OVERSAMPLE_FACTOR as f32 * sample_rate);
             }
 
             #[inline(always)]
@@ -124,3 +123,41 @@ macro_rules! define_dist_struct {
 
 define_dist_struct!(RustDist, RustDistBW<N_CHANNELS>, RustSRCIntBW<N_CHANNELS>);
 define_dist_struct!(CDist, CDistBW<N_CHANNELS>, CSRCIntBW<N_CHANNELS>);
+
+
+// avoid repetition since both versions share the same api
+// enables calling nih macros by just specifying the type
+pub trait DistFactory {
+    const NAME: &'static str;
+    const VST3_CLASS_ID: [u8; 16];
+    fn make(n_channels: u32) -> Box<dyn DistBackend>;
+}
+
+pub struct RustDistFactory;
+impl DistFactory for RustDistFactory {
+    const NAME: &'static str = "Rust Distortion";
+
+    const VST3_CLASS_ID: [u8; 16] = *b"*RustDistortion*";
+
+    fn make(n_channels: u32) -> Box<dyn DistBackend> {
+        match n_channels {
+            1 => Box::new(RustDist::<1>::new()),
+            2 => Box::new(RustDist::<2>::new()),
+            _ => panic!("unsupported channels"),
+        }
+    }
+}
+
+pub struct CDistFactory;
+impl DistFactory for CDistFactory {
+    const NAME: &'static str = "C Distortion";
+    const VST3_CLASS_ID: [u8; 16] = *b"**C_Distortion**";
+
+    fn make(n_channels: u32) -> Box<dyn DistBackend> {
+        match n_channels {
+            1 => Box::new(CDist::<1>::new()),
+            2 => Box::new(CDist::<2>::new()),
+            _ => panic!("unsupported channels"),
+        }
+    }
+}
