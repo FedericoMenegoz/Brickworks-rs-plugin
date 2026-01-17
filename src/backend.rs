@@ -22,7 +22,8 @@ macro_rules! impl_dist_wrapper {
         impl<const N_CHANNELS: usize> DistBackend for $type {
             #[inline(always)]
             fn set_sample_rate(&mut self, sample_rate: f32) {
-                self.dist.set_sample_rate(OVERSAMPLE_FACTOR as f32 * sample_rate);
+                self.dist
+                    .set_sample_rate(OVERSAMPLE_FACTOR as f32 * sample_rate);
             }
 
             #[inline(always)]
@@ -123,7 +124,6 @@ macro_rules! define_dist_struct {
 
 define_dist_struct!(RustDist, RustDistBW<N_CHANNELS>, RustSRCIntBW<N_CHANNELS>);
 define_dist_struct!(CDist, CDistBW<N_CHANNELS>, CSRCIntBW<N_CHANNELS>);
-
 
 // avoid repetition since both versions share the same api
 // enables calling nih macros by just specifying the type

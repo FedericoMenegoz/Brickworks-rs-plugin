@@ -1,6 +1,7 @@
-pub mod params;
-pub mod plugin;
 pub mod backend;
+pub(crate) mod editor;
+pub(crate) mod params;
+pub mod plugin;
 
 use backend::{CDistFactory, RustDistFactory};
 use nih_plug::{nih_export_clap, nih_export_vst3};

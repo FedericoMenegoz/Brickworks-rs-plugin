@@ -1,8 +1,12 @@
-use nih_plug::prelude::*;
+use std::sync::Arc;
 
+use nih_plug::prelude::*;
+use nih_plug_egui::EguiState;
 // parameters exposed to the host
 #[derive(Params)]
-pub struct DistParams {
+pub(crate) struct DistParams {
+    #[persist = "editor-state"]
+    pub(crate) editor_state: Arc<EguiState>,
     #[id = "distortion"]
     pub distortion: FloatParam,
     #[id = "tone"]
@@ -14,6 +18,7 @@ pub struct DistParams {
 impl Default for DistParams {
     fn default() -> Self {
         Self {
+            editor_state: EguiState::from_size(400, 300),
             distortion: FloatParam::new(
                 "distortion",
                 40.0,

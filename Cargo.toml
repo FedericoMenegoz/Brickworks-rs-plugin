@@ -13,7 +13,7 @@ nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = [
 	# useful for testing/debugging without loading into a DAW
     "standalone"    
 ]}
-nih_plug_egui ={ git = "https://github.com/robbert-vdh/nih_plug_egui" }
+nih_plug_egui ={ git = "https://github.com/robbert-vdh/nih-plug.git" }
 brickworks-rs = { git = "https://github.com/FedericoMenegoz/brickworks-rs.git", rev = "be271af"}
 # brickworks-rs = { path = "../brickworks-rs" }
 

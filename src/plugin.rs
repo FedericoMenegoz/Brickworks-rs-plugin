@@ -1,4 +1,8 @@
-use crate::{backend::{DistFactory, DistBackend}, params::DistParams};
+use crate::{
+    backend::{DistBackend, DistFactory},
+    editor::create,
+    params::DistParams,
+};
 use nih_plug::prelude::*;
 use std::{num::NonZeroU32, sync::Arc};
 
@@ -7,7 +11,7 @@ const N_CHANNELS: u32 = 1; // Mono
 
 pub struct DistPlugin<D> {
     // parameters given to the host
-    params: Arc<DistParams>,
+    pub(crate) params: Arc<DistParams>,
     // actual dist
     dist: Option<Box<dyn DistBackend>>,
     // zero-size placeholder that links either to port or native dist
@@ -85,9 +89,9 @@ where
         let num_samples = buffer.samples();
 
         let dist = self.dist.as_mut().expect(ERROR_DIST_INIT);
-        dist.set_distortion(self.params.distortion.value()*0.01);
-        dist.set_tone(self.params.tone.value()*0.01);
-        dist.set_volume(self.params.volume.value()*0.01);
+        dist.set_distortion(self.params.distortion.value() * 0.01);
+        dist.set_tone(self.params.tone.value() * 0.01);
+        dist.set_volume(self.params.volume.value() * 0.01);
 
         let read_ptr = buffer.as_slice_immutable()[CHANNEL].as_ptr();
         let write_ptr = buffer.as_slice()[CHANNEL].as_mut_ptr();
@@ -103,6 +107,10 @@ where
             );
         }
         ProcessStatus::Normal
+    }
+
+    fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
+        create(self.params.clone())
     }
 }
 
